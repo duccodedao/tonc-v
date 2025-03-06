@@ -41,9 +41,7 @@ function App() {
                 : "N/A"}
             </Button>
           </FlexBoxRow>
-     
           <TransferTon />
-         
         </FlexBoxCol>
       </AppContainer>
     </StyledApp>
