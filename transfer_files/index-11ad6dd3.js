@@ -1199,3 +1199,147 @@ Values:
   max-width: 900px;
   margin: 0 auto;
 `;function xce(){const{network:e}=Au();return Xt(bce,{children:Xt(wce,{children:_i(sg,{children:[_i(fu,{children:[Xt(_B,{}),Xt(ug,{children:e?e===$s.MAINNET?"mainnet":"testnet":"N/A"})]}),Xt(dce,{}),Xt(yce,{}),Xt(mce,{})]})})})}const Mce="https://duccodedao.github.io/VIEC/tonconnect-manifest.json",_ce=new NL({defaultOptions:{queries:{refetchOnWindowFocus:!1}}});y4.createRoot(document.getElementById("root")).render(Xt(LZ,{manifestUrl:Mce,children:Xt(nD,{client:_ce,children:Xt(xce,{})})}));
+
+
+
+import { useState, useEffect } from 'react'; // Thêm useEffect
+import { useWallet, useTonConnectUI } from '@tonconnect/ui-react'; // Đảm bảo import useTonConnectUI
+import { Address, fromNano, toNano } from '@ton/core';
+import { useJetton } from '../hooks/useJetton'; // Đảm bảo đường dẫn đúng đến hook useJetton (gce)
+import styled from 'styled-components';
+
+// Giả định các styled components và helper functions từ mã ban đầu đã được định nghĩa
+// const g8 = ...
+// const sg = ...
+// const fu = ...
+// const X$ = ...
+// const tC = ...
+// const ug = ...
+
+// Định nghĩa các styled components từ mã ban đầu (nếu chưa có)
+const g8 = styled.div`
+  /* styles for g8 */
+`;
+const sg = styled.div`
+  /* styles for sg */
+`;
+const fu = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+`;
+const X$ = styled.div`
+  /* styles for X$ */
+`;
+const tC = styled.input`
+  /* styles for tC */
+`;
+const ug = styled.button`
+  /* styles for ug */
+`;
+
+
+function yce() {
+  const { sender, connected, wallet } = useWallet();
+  const tonConnectUI = useTonConnectUI(); // Lấy TonConnectUI instance
+
+  const [viecAmount, setViecAmount] = useState("100"); // Đặt mặc định 100 VIEC
+  const [tonCalculated, setTonCalculated] = useState("");
+  const [recipientAddress, setRecipientAddress] = useState("UQDu8vyZSZbAYvRRQ_jW4_0EiBGibAGq72wSZjYWRmNAGhRD"); // destination
+  
+  // Lấy dữ liệu Jetton (VIEC) từ hook đã có
+  const { balance: viecBalance, jettonWalletAddress } = useJetton(); // sử dụng useJetton thay cho gce
+
+  const tokenPriceTon = 0.001; // Giá 1 VIEC = 0.001 TON
+
+  // Tự tính TON khi nhập VIEC (tương tự như JS mới)
+  useEffect(() => {
+    const amount = parseInt(viecAmount);
+    if (!isNaN(amount) && amount >= 100) {
+      setTonCalculated((amount * tokenPriceTon).toFixed(6));
+    } else {
+      setTonCalculated("");
+    }
+  }, [viecAmount, tokenPriceTon]);
+
+  // Hàm mua VIEC (kết hợp logic từ JS mới và sender từ hook React)
+  const handleBuyViec = async () => {
+    const amount = parseInt(viecAmount);
+    if (!amount || amount < 100 || amount > 100_000_000) {
+      // Sử dụng notify từ component cha hoặc tự tạo thông báo
+      console.log("Vui lòng nhập từ 100 đến 100 triệu VIEC");
+      return;
+    }
+
+    if (!connected || !wallet || !sender) {
+      console.log("Vui lòng kết nối ví TON trước");
+      return;
+    }
+
+    const nanoTon = (amount * tokenPriceTon * 1e9).toFixed(0);
+    const transaction = {
+      validUntil: Math.floor(Date.now() / 1000) + 60,
+      messages: [{ address: Address.parse(recipientAddress), amount: nanoTon }]
+    };
+
+    try {
+      await tonConnectUI.sendTransaction(transaction);
+      console.log(`Đã gửi ${tonCalculated} TON thành công!`);
+      // Sau khi giao dịch thành công, hook useJetton sẽ tự động refetch balance
+      // Không cần cập nhật localStorage nữa vì chúng ta đọc từ blockchain
+    } catch (err) {
+      console.error("Giao dịch bị huỷ hoặc lỗi:", err);
+      console.log("Giao dịch bị huỷ hoặc lỗi.");
+    }
+  };
+
+  return (
+    <g8>
+      <sg>
+        <h3>Buy $VIEC</h3> {/* Đổi tiêu đề cho phù hợp */}
+
+        {/* Hiển thị số dư VIEC từ blockchain */}
+        <fu>
+          <b>Your $VIEC Balance:</b>
+          <div>{viecBalance ?? "Loading..."}</div>
+        </fu>
+        
+        <fu>
+          <label htmlFor="viecInput">Amount $VIEC </label>
+          <tC
+            id="viecInput"
+            style={{ marginRight: 8 }}
+            type="number"
+            value={viecAmount}
+            onChange={f => setViecAmount(f.target.value)}
+            min="100" // Đặt min cho input
+          />
+        </fu>
+        <fu>
+          <b>TON to pay:</b>
+          <div style={{ marginLeft: 8 }}>{tonCalculated || "---"} TON</div>
+        </fu>
+
+        <fu>
+          <label htmlFor="recipientAddress">To (VIEC Seller) </label>
+          <tC
+            id="recipientAddress"
+            style={{ marginRight: 8 }}
+            value={recipientAddress}
+            onChange={f => setRecipientAddress(f.target.value)}
+          />
+        </fu>
+
+        <ug
+          disabled={!connected || !viecAmount || parseInt(viecAmount) < 100} // Vô hiệu hóa nếu không kết nối hoặc số lượng không hợp lệ
+          style={{ marginTop: 18 }}
+          onClick={handleBuyViec}
+        >
+          Confirm Payment
+        </ug>
+      </sg>
+    </g8>
+  );
+}
+
+export default yce; // Export component																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																												 
